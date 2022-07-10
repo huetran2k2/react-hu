@@ -5,75 +5,90 @@ import Modal from 'react-bootstrap/Modal';
 import { Link } from 'react-router-dom';
 
 const CarList = () => {
-    const [car, setCar] = useState([{
-        CarList: [],
-        Isload: false,
-        image: {}, file: {},
-
-    }]);
+    const [car, setCar] = useState([
+        {
+            CarList: [],
+            Isload: false,
+            image: {},
+            file: {},
+        },
+    ]);
 
     const [manuList, setManuList] = useState([]);
     const [show, setShow] = useState(false);
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
     const [name, setName] = useState('');
+    const [search, setSearch] = useState();
     const [price, setPrice] = useState(0);
     const [mf_id, setMf_id] = useState('');
 
     const CreateData = (e) => {
-        e.preventDefault()
+        e.preventDefault();
         const formData = new FormData();
-        formData.append("name", name)
-        formData.append("price", price)
-        formData.append("mf_id", mf_id)
-        formData.append("image", car.image)
+        formData.append('name', name);
+        formData.append('price', price);
+        formData.append('mf_id', mf_id);
+        formData.append('image', car.image);
 
-        axios.post("http://127.0.0.1:8000/api/showcar", formData).then((res) => {
-            alert("Đã Thêm Thành Công")
-        })
-    }
-
+        axios.post('http://127.0.0.1:8000/api/showcar', formData).then((res) => {
+            alert('Đã Thêm Thành Công');
+        });
+    };
 
     const handlerImageFile = (e) => {
         setCar({
             ...car,
             file: e.target.files && e.target.files.length ? URL.createObjectURL(e.target.files[0]) : car.file,
             image: e.target.files && e.target.files.length ? e.target.files[0] : car.image,
-        })
-    }
+        });
+    };
 
     useEffect(() => {
         const getCar = async () => {
-            const res = await axios("http://127.0.0.1:8000/api/showapi");
+            const res = await axios.get('http://127.0.0.1:8000/api/showapi');
             const carList = await res.data;
-            setCar({ CarList: carList, Isload: true })
+            setCar({ CarList: carList, Isload: true });
+            console.log(carList.data);
         };
         const getManu = async () => {
-            const res = await axios("http://127.0.0.1:8000/api/manu");
+            const res = await axios('http://127.0.0.1:8000/api/manu');
             const manuList = res.data;
-            setManuList(manuList)
+            setManuList(manuList);
         };
-        getManu()
+        getManu();
         if (!car.Isload) getCar();
     }, [car]);
     const handleDelete = async (id) => {
         const res = await axios.delete(`http://127.0.0.1:8000/api/delete/${id}`);
         setCar((prevState) => ({
-            CarList: prevState.CarList.data
-            
-        }))
+            CarList: prevState.CarList.data,
+        }));
+    };
+  
+
+    const handleSearch = async(e)=> {
+        const res = await axios.get(`http://127.0.0.1:8000/api/show?search=${search}`);
+        // const carList = await res.data;
+            setCar({ CarList: res, Isload: true });
+         
     }
 
     return (
-        <div className='container'>
+        
+        <div className="container">
+
             <Button variant="primary" onClick={handleShow}>
                 Create
             </Button>
             <Modal show={show} onHide={handleClose}>
+                
                 <Modal.Header closeButton>
                     <Modal.Title>Modal heading</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
+                  
+                
                     <form onSubmit={CreateData}>
                         <div className="form-group">
                             <label htmlFor="exampleInputEmail1">Name</label>
@@ -90,16 +105,18 @@ const CarList = () => {
                         <div className="form-group">
                             <label htmlFor="exampleInputEmail1">Manufacturer</label>
                             <select className="form-control" onChange={(e) => setMf_id(e.target.value)}>
-                                {
-                                    manuList.map((manu, index) => {
-                                        return (    
-                                                <option value={manu.id} key={index}>{manu.mf_name} </option>
-                                        )
-                                    })
-                                }
+                                {manuList.map((manu, index) => {
+                                    return (
+                                        <option value={manu.id} key={index}>
+                                            {manu.mf_name}{' '}
+                                        </option>
+                                    );
+                                })}
                             </select>
                         </div>
-                        <button type="submit" className="btn btn-primary">Submit</button>
+                        <button type="submit" className="btn btn-primary">
+                            Submit
+                        </button>
                     </form>
                 </Modal.Body>
                 <Modal.Footer>
@@ -111,6 +128,9 @@ const CarList = () => {
                     </Button>
                 </Modal.Footer>
             </Modal>
+            <br/>
+            <input type="text" name="search" onChange={(e) => setSearch(e.target.value)}  />
+            <button type='button' onClick={(e)=>handleSearch(e)}>Search</button>
             {car.Isload ? (
                 <table className="table">
                     <thead>
@@ -119,33 +139,38 @@ const CarList = () => {
                             <th scope="col">image</th>
                             <th scope="col">price</th>
                             <th scope="col">manufacturer</th>
-                            <th scope='col'>select</th>
+                            <th scope="col">select</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {!!car.CarList.data && car.CarList.data.map((cars, index) => {
-                            return (
-                                <tr key={index}>
-                                    {/* <td scope="row"></td> */}
-                                    <td>{cars.name}</td>
-                                    <td><img src={"http://127.0.0.1:8000/image/" + cars.image} style={{ width: '300px' }} alt="" /></td>
-                                    <td>{cars.price}</td>
-                                    <td>{cars.name_mfs}</td>
-                                    <td>
-                                        <button className="btn btn-primary" onClick={() => handleDelete(cars.id)}>Delete</button>
-                                    </td>
-                                    <td>
-                                        <Link to ={`Update/${cars.id}`}>Update</Link>
-                                    </td>
-                                </tr>
-                            )
-                        })}
+                        {!!car.CarList.data &&
+                            car.CarList.data.map((cars, index) => {
+                                return (
+                                    <tr key={index}>
+                                        {/* <td scope="row"></td> */}
+                                        <td>{cars.name}</td>
+                                        <td>
+                                            <img src={'http://127.0.0.1:8000/image/' + cars.image} style={{ width: '150px' }} alt="" />
+                                        </td>
+                                        <td>{cars.price}</td>
+                                        <td>{cars.name_mfs}</td>
+                                        <td>
+                                            <button className="btn btn-primary" onClick={() => handleDelete(cars.id)}>
+                                                Delete
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <Link to={`Update/${cars.id}`}>Update</Link>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                     </tbody>
                 </table>
-            ) :
+            ) : (
                 <div>No data in API </div>
-            }
+            )}
         </div>
-    )
-}
+    );
+};
 export default CarList;
